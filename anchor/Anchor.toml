@@ -4,8 +4,11 @@
 resolution = true
 skip-lint = false
 
+[programs.localnet]
+hero_game = "7Yzbjo3ptcfbK1M4oTHxaGZPkZN1WYgVVjXkqAW94VF3"
+
 [programs.devnet]
-vault = "8Lh4kUTPfUQ4CDDbvNyhPYMkwkiPkf5h5n51SUwJ4DGk"
+hero_game = "7Yzbjo3ptcfbK1M4oTHxaGZPkZN1WYgVVjXkqAW94VF3"
 
 [registry]
 url = "https://api.apr.dev"

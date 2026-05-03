@@ -14,22 +14,22 @@ import {
   type ProgramDerivedAddress,
 } from "@solana/kit";
 
-export type VaultSeeds = {
-  signer: Address;
+export type PlayerSeeds = {
+  user: Address;
 };
 
-export async function findVaultPda(
-  seeds: VaultSeeds,
+export async function findPlayerPda(
+  seeds: PlayerSeeds,
   config: { programAddress?: Address | undefined } = {},
 ): Promise<ProgramDerivedAddress> {
   const {
-    programAddress = "8Lh4kUTPfUQ4CDDbvNyhPYMkwkiPkf5h5n51SUwJ4DGk" as Address<"8Lh4kUTPfUQ4CDDbvNyhPYMkwkiPkf5h5n51SUwJ4DGk">,
+    programAddress = "7Yzbjo3ptcfbK1M4oTHxaGZPkZN1WYgVVjXkqAW94VF3" as Address<"7Yzbjo3ptcfbK1M4oTHxaGZPkZN1WYgVVjXkqAW94VF3">,
   } = config;
   return await getProgramDerivedAddress({
     programAddress,
     seeds: [
-      getBytesEncoder().encode(new Uint8Array([118, 97, 117, 108, 116])),
-      getAddressEncoder().encode(seeds.signer),
+      getBytesEncoder().encode(new Uint8Array([112, 108, 97, 121, 101, 114])),
+      getAddressEncoder().encode(seeds.user),
     ],
   });
 }

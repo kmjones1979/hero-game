@@ -1,12 +1,12 @@
 [package]
-name = "vault"
+name = "hero_game"
 version = "0.1.0"
-description = "A simple SOL vault program"
+description = "On-chain hero NFT minting program (PDA-based)"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "vault"
+name = "hero_game"
 
 [features]
 default = []
@@ -17,7 +17,8 @@ no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build"]
 
 [dependencies]
-anchor-lang = "0.32.1"
+anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
+solana-program = "2.3"
 
 [dev-dependencies]
 litesvm = "=0.7.1"
