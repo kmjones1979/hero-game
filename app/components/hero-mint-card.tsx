@@ -57,6 +57,10 @@ export function HeroMintCard() {
       await Promise.all([refreshPlayer(), refreshHeroes()]);
     } catch (err) {
       console.error("Mint failed:", err);
+      if (err instanceof Error) {
+        console.error("Error name:", err.name, "message:", err.message);
+        if (err.cause) console.error("Cause:", err.cause);
+      }
       const msg = parseTransactionError(err);
       setLastError(msg);
       toast.error(msg);
