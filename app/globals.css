@@ -9,6 +9,10 @@
   --color-dry-sage: #b6c4a2;
   --color-pearl-beige: #d4cdab;
   --color-beige: #dce2bd;
+  --color-rust: #c4544a;
+
+  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
 }
 
 :root {
@@ -28,36 +32,10 @@
   --accent: rgba(142, 155, 144, 0.2);
   --accent-foreground: #dce2bd;
   --cream: rgba(35, 39, 35, 0.7);
-  --destructive: #b6c4a2;
+  --destructive: #c4544a;
   --destructive-foreground: #d4cdab;
   --ring: #93c0a4;
   --radius: 0.625rem;
-  --secondary: rgba(142, 155, 144, 0.2);
-  --secondary-foreground: #dce2bd;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-}
-
-.dark {
-  --background: #1a1d1a;
-  --foreground: #dce2bd;
-  --primary: #93c0a4;
-  --primary-foreground: #1a1d1a;
-  --muted: #8e9b90;
-  --muted-foreground: #d4cdab;
-  --card: rgba(35, 39, 35, 0.5);
-  --card-foreground: #dce2bd;
-  --popover: #1a1d1a;
-  --popover-foreground: #dce2bd;
-  --border: rgba(142, 155, 144, 0.3);
-  --border-low: rgba(142, 155, 144, 0.15);
-  --input: rgba(142, 155, 144, 0.3);
-  --accent: rgba(142, 155, 144, 0.2);
-  --accent-foreground: #dce2bd;
-  --cream: rgba(35, 39, 35, 0.7);
-  --destructive: #b6c4a2;
-  --destructive-foreground: #d4cdab;
-  --ring: #93c0a4;
   --secondary: rgba(142, 155, 144, 0.2);
   --secondary-foreground: #dce2bd;
 }
@@ -84,47 +62,210 @@
   --color-ring: var(--ring);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
 @layer base {
   * {
-    @apply border-border outline-transparent;
+    border-color: var(--border);
+    outline-color: transparent;
+  }
+
+  html {
+    color-scheme: dark;
   }
 
   body {
-    @apply bg-ink text-beige antialiased;
+    background-color: var(--color-ink);
+    color: var(--color-beige);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: rgba(147, 192, 164, 0.3);
+    color: var(--color-beige);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(147, 192, 164, 0.6);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  button:focus:not(:focus-visible),
+  a:focus:not(:focus-visible) {
+    outline: none;
   }
 }
 
-@keyframes legendary-rotate {
-  0% {
-    background-position: 0% 50%;
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
   }
-  50% {
-    background-position: 100% 50%;
+  .font-sans {
+    font-family: var(--font-sans);
   }
-  100% {
-    background-position: 0% 50%;
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Legendary conic-gradient ring — animates --angle */
+@keyframes legendary-spin {
+  to {
+    --angle: 360deg;
   }
 }
 
 .legendary-ring {
-  background: linear-gradient(
-    135deg,
+  --angle: 0deg;
+  background: conic-gradient(
+    from var(--angle),
     #8e9b90,
     #93c0a4,
     #b6c4a2,
     #d4cdab,
     #dce2bd,
-    #b6c4a2,
     #8e9b90
   );
-  background-size: 400% 400%;
-  animation: legendary-rotate 8s ease infinite;
+  animation: legendary-spin 6s linear infinite;
+}
+
+/* Soft particle drift used by Rare reveal */
+@keyframes drift-up {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-160px) scale(0.6);
+    opacity: 0;
+  }
+}
+
+.particle-drift {
+  animation: drift-up 3s ease-out forwards;
+}
+
+/* Skeleton shimmer */
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 205, 171, 0.08),
+    transparent
+  );
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+/* Empty-state stroke draw */
+@keyframes stroke-draw {
+  0% {
+    stroke-dashoffset: 600;
+  }
+  50% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -600;
+  }
+}
+
+.stroke-draw {
+  stroke-dasharray: 600;
+  animation: stroke-draw 4s ease-in-out infinite;
+}
+
+/* Pulsing dot used during pending wallet signature */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+/* Vignette pulse for legendary reveal */
+@keyframes vignette-pulse {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.vignette-pulse {
+  animation: vignette-pulse 1.6s ease-out forwards;
+}
+
+/* One-shot holographic sweep across the legendary card during reveal */
+@keyframes holo-sweep {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.holo-sweep {
+  animation: holo-sweep 1.4s ease-out forwards;
+}
+
+/* Reduced motion: kill non-essential animation */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .legendary-ring {
+    animation: none;
+    background: linear-gradient(135deg, #8e9b90, #93c0a4, #d4cdab, #dce2bd);
+  }
 }

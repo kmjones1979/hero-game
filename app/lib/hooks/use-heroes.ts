@@ -26,9 +26,7 @@ export function useHeroes(owner: Address | undefined, count: number | null) {
     key,
     async ([, , addr, n]) => {
       const indices = Array.from({ length: n }, (_, i) => BigInt(i));
-      const pdas = await Promise.all(
-        indices.map((i) => findHeroPda(addr, i)),
-      );
+      const pdas = await Promise.all(indices.map((i) => findHeroPda(addr, i)));
       const addresses = pdas.map(([a]) => a);
       const accounts = await fetchAllMaybeHero(client.rpc, addresses);
       const heroes: HeroEntry[] = [];
@@ -44,7 +42,7 @@ export function useHeroes(owner: Address | undefined, count: number | null) {
       heroes.sort((a, b) => b.index - a.index);
       return heroes;
     },
-    { refreshInterval: 60_000, revalidateOnFocus: true },
+    { refreshInterval: 60_000, revalidateOnFocus: true }
   );
 
   return {
