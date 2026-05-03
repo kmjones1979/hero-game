@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { ChevronDown } from "lucide-react";
+import clsx from "clsx";
 import { useCluster, CLUSTERS } from "./cluster-context";
 
 export function ClusterSelect() {
@@ -21,56 +23,43 @@ export function ClusterSelect() {
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border-low bg-card px-3 py-2 text-xs font-medium transition hover:bg-cream"
+        onClick={() => setIsOpen((v) => !v)}
+        className="inline-flex items-center gap-1.5 rounded-md border border-ash-grey/30 bg-ink/60 px-2.5 py-1.5 text-[11px] font-sans uppercase tracking-[0.18em] text-pearl-beige/80 transition-colors duration-150 hover:bg-muted-teal/10"
       >
-        <span
-          className="h-2 w-2 rounded-full"
-          style={{
-            backgroundColor:
-              cluster === "mainnet"
-                ? "#22c55e"
-                : cluster === "devnet"
-                  ? "#3b82f6"
-                  : cluster === "testnet"
-                    ? "#eab308"
-                    : "#a3a3a3",
-          }}
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-teal" />
+        <span>{cluster}</span>
+        <ChevronDown
+          size={12}
+          className={clsx(
+            "text-pearl-beige/60 transition-transform duration-200",
+            isOpen && "rotate-180"
+          )}
         />
-        {cluster}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-40 rounded-xl border border-border-low bg-card p-2 shadow-lg">
-          <div className="space-y-1">
-            {CLUSTERS.map((c) => (
-              <button
-                key={c}
-                onClick={() => {
-                  setCluster(c);
-                  setIsOpen(false);
-                }}
-                className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium transition hover:bg-cream ${
-                  c === cluster ? "bg-cream" : ""
-                }`}
-              >
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{
-                    backgroundColor:
-                      c === "mainnet"
-                        ? "#22c55e"
-                        : c === "devnet"
-                          ? "#3b82f6"
-                          : c === "testnet"
-                            ? "#eab308"
-                            : "#a3a3a3",
-                  }}
-                />
-                {c}
-              </button>
-            ))}
-          </div>
+        <div className="absolute right-0 top-full z-50 mt-2 w-40 overflow-hidden rounded-lg border border-ash-grey/30 bg-ink/95 p-1 shadow-xl backdrop-blur-md">
+          {CLUSTERS.map((c) => (
+            <button
+              key={c}
+              onClick={() => {
+                setCluster(c);
+                setIsOpen(false);
+              }}
+              className={clsx(
+                "flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-150 hover:bg-muted-teal/10",
+                c === cluster ? "text-beige" : "text-pearl-beige/70"
+              )}
+            >
+              <span
+                className={clsx(
+                  "h-1.5 w-1.5 rounded-full",
+                  c === cluster ? "bg-muted-teal" : "bg-ash-grey/60"
+                )}
+              />
+              <span>{c}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>

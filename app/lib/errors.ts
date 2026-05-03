@@ -10,7 +10,8 @@ import {
 } from "../generated/hero_game";
 
 const HERO_GAME_ERROR_CODES: Record<number, HeroGameError> = {
-  [HERO_GAME_ERROR__MINT_COUNTER_OVERFLOW]: HERO_GAME_ERROR__MINT_COUNTER_OVERFLOW,
+  [HERO_GAME_ERROR__MINT_COUNTER_OVERFLOW]:
+    HERO_GAME_ERROR__MINT_COUNTER_OVERFLOW,
 };
 
 export function parseTransactionError(err: unknown): string {
@@ -31,13 +32,13 @@ export function parseTransactionError(err: unknown): string {
   if (
     isSolanaError(
       err,
-      SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE,
+      SOLANA_ERROR__JSON_RPC__SERVER_ERROR_SEND_TRANSACTION_PREFLIGHT_FAILURE
     )
   ) {
     const logs = (err.context as Record<string, unknown>)?.logs;
     if (Array.isArray(logs)) {
       const programError = logs.find(
-        (l: string) => l.includes("Error") || l.includes("failed"),
+        (l: string) => l.includes("Error") || l.includes("failed")
       );
       if (programError) return String(programError);
     }

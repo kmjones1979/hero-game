@@ -26,7 +26,7 @@ export function usePlayer(owner: Address | undefined) {
         data: account.exists ? (account.data as Player) : null,
       };
     },
-    { refreshInterval: 30_000, revalidateOnFocus: true },
+    { refreshInterval: 30_000, revalidateOnFocus: true }
   );
 
   useEffect(() => {

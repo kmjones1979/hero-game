@@ -10,7 +10,7 @@ import { HERO_GAME_PROGRAM_ADDRESS } from "../generated/hero_game";
 
 export async function findHeroPda(
   user: Address,
-  index: bigint,
+  index: bigint
 ): Promise<ProgramDerivedAddress> {
   return getProgramDerivedAddress({
     programAddress: HERO_GAME_PROGRAM_ADDRESS,
@@ -22,7 +22,13 @@ export async function findHeroPda(
   });
 }
 
-export const CLASS_NAMES = ["Warrior", "Mage", "Rogue", "Cleric", "Ranger"] as const;
+export const CLASS_NAMES = [
+  "Warrior",
+  "Mage",
+  "Rogue",
+  "Cleric",
+  "Ranger",
+] as const;
 export const CLASS_EMOJI = ["⚔️", "🔮", "🗡️", "✨", "🏹"] as const;
 export const RARITY_NAMES = ["Common", "Rare", "Epic", "Legendary"] as const;
 

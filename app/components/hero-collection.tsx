@@ -1,159 +1,129 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { motion } from "motion/react";
 import { useWallet } from "../lib/wallet/context";
 import { useCluster } from "./cluster-context";
 import { usePlayer } from "../lib/hooks/use-player";
 import { useHeroes, type HeroEntry } from "../lib/hooks/use-heroes";
-import { classEmoji, classLabel, rarityLabel } from "../lib/hero-pda";
-
-const RARITY_STYLES = [
-  { border: "border-ash-grey", thickness: "border", glow: "" },
-  {
-    border: "border-muted-teal",
-    thickness: "border",
-    glow: "shadow-[0_0_24px_-4px_rgba(147,192,164,0.45)]",
-  },
-  {
-    border: "border-dry-sage",
-    thickness: "border-2",
-    glow: "shadow-[0_0_28px_-4px_rgba(182,196,162,0.55)]",
-  },
-  {
-    border: "border-pearl-beige",
-    thickness: "border-2",
-    glow: "shadow-[0_0_36px_-4px_rgba(212,205,171,0.65)]",
-  },
-] as const;
-
-function formatRelative(unixSeconds: bigint): string {
-  const now = Math.floor(Date.now() / 1000);
-  const then = Number(unixSeconds);
-  const diff = Math.max(0, now - then);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
-const STAT_MAX = 300;
-
-function StatBar({ label, value }: { label: string; value: number }) {
-  const pct = Math.min(100, Math.round((value / STAT_MAX) * 100));
-  return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="w-9 text-pearl-beige/70 uppercase tracking-wider">
-        {label}
-      </span>
-      <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-ash-grey/30">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-muted-teal"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="w-9 text-right font-mono tabular-nums text-beige">
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function HeroCard({ hero, getExplorerUrl }: {
-  hero: HeroEntry;
-  getExplorerUrl: (path: string) => string;
-}) {
-  const { data, address, index } = hero;
-  const rarityStyle = RARITY_STYLES[data.rarity] ?? RARITY_STYLES[0];
-  const isLegendary = data.rarity === 3;
-
-  return (
-    <div className="relative">
-      {isLegendary && (
-        <div
-          aria-hidden="true"
-          className="legendary-ring absolute -inset-[2px] rounded-2xl"
-        />
-      )}
-      <div
-        className={`relative overflow-hidden rounded-2xl bg-[rgba(35,39,35,0.85)] p-5 backdrop-blur-sm ${rarityStyle.thickness} ${rarityStyle.border} ${rarityStyle.glow}`}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{classEmoji(data.class)}</span>
-              <span
-                className="font-serif text-lg tracking-wide text-beige"
-                style={{ fontFamily: "Georgia, serif" }}
-              >
-                {classLabel(data.class)}
-              </span>
-            </div>
-            <p className="mt-0.5 text-[10px] uppercase tracking-[0.2em] text-pearl-beige/70">
-              #{index} · {rarityLabel(data.rarity)}
-            </p>
-          </div>
-          <a
-            href={getExplorerUrl(`/address/${address}`)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-mono text-[10px] text-pearl-beige/60 underline underline-offset-2 hover:text-muted-teal"
-          >
-            {String(address).slice(0, 4)}…{String(address).slice(-4)}
-          </a>
-        </div>
-
-        <div className="mt-4 space-y-1.5">
-          <StatBar label="HP" value={data.hp} />
-          <StatBar label="ATK" value={data.attack} />
-          <StatBar label="DEF" value={data.defense} />
-          <StatBar label="SPD" value={data.speed} />
-        </div>
-
-        <p className="mt-4 text-[10px] text-pearl-beige/70">
-          Forged {formatRelative(data.mintedAt)}
-        </p>
-      </div>
-    </div>
-  );
-}
+import { HeroCard } from "./hero-card";
+import { CollectionStats } from "./collection-stats";
+import { SortSelect, type SortKey } from "./sort-select";
+import { SkeletonGrid } from "./skeleton-card";
+import { EmptyState } from "./empty-state";
+import { InlineAlert } from "./inline-alert";
+import { HeroMintCard } from "./hero-mint-card";
 
 export function HeroCollection() {
   const { wallet, status } = useWallet();
   const { getExplorerUrl } = useCluster();
   const owner = wallet?.account.address;
-  const { heroesMinted } = usePlayer(owner);
-  const { heroes, isLoading } = useHeroes(owner, heroesMinted);
+  const {
+    heroesMinted,
+    error: playerError,
+    mutate: refreshPlayer,
+  } = usePlayer(owner);
+  const { heroes, isLoading, error, mutate } = useHeroes(owner, heroesMinted);
+
+  const [sort, setSort] = useState<SortKey>("newest");
+
+  const sorted = useMemo(() => sortHeroes(heroes, sort), [heroes, sort]);
 
   if (status !== "connected") return null;
 
-  if (heroesMinted === null || heroesMinted === 0) {
+  if (error || playerError) {
     return (
-      <div className="rounded-2xl border border-ash-grey/20 bg-[rgba(35,39,35,0.4)] p-12 text-center">
-        <p className="text-beige/60">
-          {isLoading
-            ? "Reading your codex..."
-            : "Mint your first hero to start your collection"}
-        </p>
-      </div>
+      <InlineAlert
+        message="We couldn't load your collection from the network."
+        onRetry={() => {
+          void mutate();
+          void refreshPlayer();
+        }}
+      />
+    );
+  }
+
+  if (heroesMinted === null && isLoading) {
+    return (
+      <section>
+        <CollectionHeader />
+        <SkeletonGrid count={3} />
+      </section>
+    );
+  }
+
+  if (heroesMinted === null || heroesMinted === 0) {
+    return <EmptyState action={<HeroMintCard variant="compact" />} />;
+  }
+
+  if (heroes.length === 0 && isLoading) {
+    return (
+      <section>
+        <CollectionHeader />
+        <SkeletonGrid count={Math.min(heroesMinted, 4)} />
+      </section>
     );
   }
 
   return (
-    <div>
-      <h3
-        className="mb-4 font-serif text-xl tracking-[0.15em] text-beige"
-        style={{ fontFamily: "Georgia, serif" }}
+    <section className="space-y-5">
+      <header className="flex flex-col items-start justify-between gap-4 border-b border-ash-grey/20 pb-4 sm:flex-row sm:items-center">
+        <div className="space-y-2">
+          <h2 className="font-display text-2xl font-semibold tracking-wide text-beige">
+            Your Codex
+          </h2>
+          <CollectionStats heroes={heroes} />
+        </div>
+        <SortSelect value={sort} onChange={setSort} />
+      </header>
+
+      <motion.div
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: {},
+          show: { transition: { staggerChildren: 0.06 } },
+        }}
+        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       >
-        YOUR CODEX
-      </h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {heroes.map((h) => (
+        {sorted.map((h) => (
           <HeroCard
             key={String(h.address)}
             hero={h}
             getExplorerUrl={getExplorerUrl}
           />
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </section>
   );
+}
+
+function CollectionHeader() {
+  return (
+    <header className="mb-5 flex items-center justify-between border-b border-ash-grey/20 pb-4">
+      <h2 className="font-display text-2xl font-semibold tracking-wide text-beige">
+        Your Codex
+      </h2>
+    </header>
+  );
+}
+
+function sortHeroes(heroes: readonly HeroEntry[], key: SortKey): HeroEntry[] {
+  const arr = [...heroes];
+  switch (key) {
+    case "newest":
+      arr.sort((a, b) => b.index - a.index);
+      break;
+    case "oldest":
+      arr.sort((a, b) => a.index - b.index);
+      break;
+    case "rarest":
+      arr.sort((a, b) => {
+        if (b.data.rarity !== a.data.rarity)
+          return b.data.rarity - a.data.rarity;
+        return b.index - a.index;
+      });
+      break;
+  }
+  return arr;
 }

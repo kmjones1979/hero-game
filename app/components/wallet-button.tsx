@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { Check, Copy, ExternalLink, LogOut, Wallet } from "lucide-react";
 import { useWallet } from "../lib/wallet/context";
 import { useBalance } from "../lib/hooks/use-balance";
 import { lamportsToSolString } from "../lib/lamports";
@@ -10,8 +11,8 @@ import { useCluster } from "./cluster-context";
 export function WalletButton() {
   const { connectors, connect, disconnect, wallet, status, error } =
     useWallet();
-
   const { getExplorerUrl } = useCluster();
+
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -19,57 +20,70 @@ export function WalletButton() {
   const address = wallet?.account.address;
   const balance = useBalance(address);
 
-  const open = () => setIsOpen(true);
-  const close = () => setIsOpen(false);
-
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        close();
+        setIsOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, []);
+
   const handleCopy = async () => {
     if (!address) return;
     await navigator.clipboard.writeText(address);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   if (status !== "connected") {
     return (
       <div className="relative" ref={ref}>
         <button
-          onClick={() => (isOpen ? close() : open())}
-          className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground shadow-xs transition hover:bg-primary/90"
+          onClick={() => setIsOpen((v) => !v)}
+          className="inline-flex items-center gap-2 rounded-md border border-muted-teal/40 bg-muted-teal/10 px-3.5 py-1.5 text-xs font-medium tracking-wide text-beige transition-colors duration-200 hover:bg-muted-teal/20"
         >
-          Connect Wallet
+          <Wallet size={14} className="text-muted-teal" />
+          <span>Connect Wallet</span>
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-border-low bg-card p-3 shadow-lg">
-            <p className="mb-2 text-xs font-medium text-muted">
+          <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-lg border border-ash-grey/30 bg-ink/95 p-2 shadow-xl backdrop-blur-md">
+            <p className="px-2 pb-1.5 pt-1 text-[10px] font-sans uppercase tracking-[0.2em] text-pearl-beige/60">
               Choose a wallet
             </p>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
+              {connectors.length === 0 && (
+                <p className="px-2 py-3 text-xs text-pearl-beige/60">
+                  No wallets detected. Install Phantom, Backpack, or Solflare to
+                  continue.
+                </p>
+              )}
               {connectors.map((connector) => (
                 <button
                   key={connector.id}
                   onClick={async () => {
                     try {
                       await connect(connector.id);
-                      close();
+                      setIsOpen(false);
                     } catch {
-                      // connection errors are surfaced through context state
+                      /* errors surfaced via context */
                     }
                   }}
                   disabled={status === "connecting"}
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition hover:bg-cream disabled:opacity-50 disabled:pointer-events-none"
+                  className="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm font-medium text-beige transition-colors duration-150 hover:bg-muted-teal/10 disabled:opacity-50 disabled:pointer-events-none"
                 >
                   {connector.icon && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={connector.icon}
                       alt=""
@@ -81,10 +95,12 @@ export function WalletButton() {
               ))}
             </div>
             {status === "connecting" && (
-              <p className="mt-2 text-xs text-muted">Connecting...</p>
+              <p className="px-2 pt-2 text-xs text-pearl-beige/60">
+                Connecting…
+              </p>
             )}
             {error != null && (
-              <p className="mt-2 text-xs text-destructive">
+              <p className="px-2 pt-2 text-xs text-rust">
                 {error instanceof Error ? error.message : String(error)}
               </p>
             )}
@@ -97,54 +113,75 @@ export function WalletButton() {
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => (isOpen ? close() : open())}
-        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border-low bg-card px-3 py-2 text-xs font-medium transition hover:bg-cream"
+        onClick={() => setIsOpen((v) => !v)}
+        className="inline-flex items-center gap-2 rounded-md border border-muted-teal/40 bg-muted-teal/10 px-3 py-1.5 text-xs font-medium tracking-wide text-beige transition-colors duration-200 hover:bg-muted-teal/20"
       >
-        <span className="h-2 w-2 rounded-full bg-green-500" />
-        <span className="font-mono">{ellipsify(address!, 4)}</span>
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inset-0 rounded-full bg-muted-teal/60 pulse-dot" />
+          <span className="relative h-2 w-2 rounded-full bg-muted-teal" />
+        </span>
+        <span className="font-mono tabular">{ellipsify(address!, 4)}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-border-low bg-card p-4 shadow-lg">
-          <div className="mb-3">
-            <p className="text-xs text-muted">Balance</p>
-            <p className="text-lg font-bold tabular-nums">
+        <div className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-lg border border-ash-grey/30 bg-ink/95 p-3 shadow-xl backdrop-blur-md">
+          <div className="mb-3 px-1">
+            <p className="text-[10px] font-sans uppercase tracking-[0.2em] text-pearl-beige/60">
+              Balance
+            </p>
+            <p className="font-display text-2xl font-semibold tabular text-beige">
               {balance.lamports != null
                 ? lamportsToSolString(balance.lamports)
-                : "\u2014"}{" "}
-              <span className="text-sm font-normal text-muted">SOL</span>
+                : "—"}
+              <span className="ml-1 text-xs font-sans font-normal tracking-wide text-pearl-beige/60">
+                SOL
+              </span>
             </p>
           </div>
 
-          <div className="mb-3 rounded-lg border border-border-low bg-cream/50 px-3 py-2">
-            <p className="break-all font-mono text-xs">{address}</p>
+          <div className="mb-3 rounded-md border border-ash-grey/20 bg-ink/60 px-2.5 py-2">
+            <p className="break-all font-mono text-[11px] tabular text-pearl-beige">
+              {address}
+            </p>
           </div>
 
           <div className="flex gap-2">
             <button
               onClick={handleCopy}
-              className="flex-1 cursor-pointer rounded-lg border border-border-low bg-card px-3 py-2 text-xs font-medium transition hover:bg-cream"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-ash-grey/30 bg-ink/60 px-3 py-2 text-xs font-medium text-beige transition-colors duration-150 hover:bg-muted-teal/10"
             >
-              {copied ? "Copied!" : "Copy address"}
+              {copied ? (
+                <>
+                  <Check size={12} className="text-muted-teal" />
+                  <span>Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={12} className="text-pearl-beige/70" />
+                  <span>Copy</span>
+                </>
+              )}
             </button>
             <a
               href={getExplorerUrl(`/address/${address}`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 rounded-lg border border-border-low bg-card px-3 py-2 text-center text-xs font-medium transition hover:bg-cream"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-ash-grey/30 bg-ink/60 px-3 py-2 text-xs font-medium text-beige transition-colors duration-150 hover:bg-muted-teal/10"
             >
-              Explorer
+              <ExternalLink size={12} className="text-pearl-beige/70" />
+              <span>Explorer</span>
             </a>
           </div>
 
           <button
             onClick={() => {
               disconnect();
-              close();
+              setIsOpen(false);
             }}
-            className="mt-2 w-full cursor-pointer rounded-lg border border-border-low bg-card px-3 py-2 text-xs font-medium text-destructive transition hover:bg-destructive/10"
+            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-ash-grey/30 bg-ink/60 px-3 py-2 text-xs font-medium text-pearl-beige transition-colors duration-150 hover:border-rust/40 hover:text-rust"
           >
-            Disconnect
+            <LogOut size={12} />
+            <span>Disconnect</span>
           </button>
         </div>
       )}
